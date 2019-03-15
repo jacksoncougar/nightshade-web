@@ -1,0 +1,23 @@
+.timer {
+    justify-self: center;
+    align-self: center;
+    grid-area: timer;
+    font-size: 10vw;
+    padding: 0.2em 1em;
+} 
+
+.grid-container {
+    height: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+    grid-template-areas: ". . ." ". timer ." ". . .";
+  }
+
+
+html, body{
+    height: 100%;
+    background-color: #111;
+    color: rgb(117, 117, 22);
+    font-family: 'Didact Gothic', sans-serif;
+}
