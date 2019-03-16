@@ -1,23 +1,48 @@
+$time-color: rgb(202, 202, 38);
+$inner-glow: rgb(182, 253, 182);
+$outer-glow: rgb(125, 228, 28);
+
 .timer {
     justify-self: center;
     align-self: center;
     grid-area: timer;
-    font-size: 10vw;
-    padding: 0.2em 1em;
-} 
-
+    font-size: 25vmin;
+    padding: 0.2rem 1rem;
+    margin-left: calc(1ch);
+    text-shadow: 1vmin 1vmin 1vmin #000;
+    text-shadow: 0 0 .1vmin $inner-glow, 0 0 .2vmin $inner-glow, 0 0 .3vmin $inner-glow, 0 0 .4vmin $outer-glow, 0 0 .7vmin $outer-glow, 0 0 .8vmin $outer-glow, 0 0 1vmin $outer-glow, 0 0 15vmin $outer-glow;
+    color: $time-color;
+    
+    .break & span {
+        color: invert($time-color);
+    }
+}
+ 
+body { 
+    background: repeating-linear-gradient(45deg, #2b2b2b 0%, #2b2b2b 10%, #222222 0%, #222222 50%) 0 / 15px 15px;
+  }
+  
 .grid-container {
+    background-image: url('/images/img-noise-361x370.png');
     height: 100%;
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: 1fr 1fr 1fr;
     grid-template-areas: ". . ." ". timer ." ". . .";
-  }
+}
 
+.break {
+    background-color: invert(#111);
+    color: invert(rgb(117, 117, 22));
+}
 
-html, body{
+html, body {
+    background: rgb(63, 94, 251);
+    background: radial-gradient(circle, #050505 0%, #010101 100%);
+    margin: 0;
+    line-height: 1;
     height: 100%;
     background-color: #111;
     color: rgb(117, 117, 22);
-    font-family: 'Didact Gothic', sans-serif;
+    font-family: 'B612 Mono', monospace;
 }
