@@ -1,43 +1,199 @@
-$time-color: rgb(202, 202, 38);
+$time-color: #ffffa8;
 $inner-glow: rgb(182, 253, 182);
 $outer-glow: rgb(125, 228, 28);
 
+@mixin neon($inner, $outer) {
+    text-shadow: 0 0 1vmin $inner, 0 0 2vmin $inner, 0 0 3vmin $inner, 0 0 0.4vmin $outer, 0 0 7vmin $outer, 0 0 8vmin $outer, 0 0 10vmin $outer, 0 0 150vmin $outer;
+}
+
+.neon {
+    box-shadow: 0 0 0.1vmin $inner-glow, 0 0 0.2vmin $inner-glow, 0 0 0.3vmin $inner-glow, 0 0 0.4vmin $outer-glow, 0 0 0.7vmin $outer-glow, 0 0 0.8vmin $outer-glow, 0 0 1vmin $outer-glow, 0 0 15vmin $outer-glow;
+}
+
+.task {
+    grid-area: timer;
+}
+
+.nixie {
+    position: relative;
+    font-size: 15vw;
+    font-weight: 100;
+    font-family: 'Lato';
+    color:blueviolet;
+    display: inline-block;
+    width: 1ch;
+    height: 1em;
+
+     
+.break & span.active {
+        color: orange;
+        @include neon(orange, orangered )
+    }
+
+    span {
+        user-select: none;
+        display: inline;
+        position: absolute;
+        top: 0; 
+        left: 0;
+        opacity: 0.6;
+        text-shadow: 0px 0px 1px black;
+        mix-blend-mode: soft-light;
+
+        &.active {
+            mix-blend-mode: normal;
+            opacity: 1;
+            color: $time-color;
+            @include neon($inner-glow, $outer-glow);
+        }
+    }
+}
+
 .timer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+    grid-template-areas: "minutes" "seconds";
+
     justify-self: center;
     align-self: center;
     grid-area: timer;
-    font-size: 25vmin;
     padding: 0.2rem 1rem;
-    margin-left: calc(1ch);
-    text-shadow: 1vmin 1vmin 1vmin #000;
-    text-shadow: 0 0 .1vmin $inner-glow, 0 0 .2vmin $inner-glow, 0 0 .3vmin $inner-glow, 0 0 .4vmin $outer-glow, 0 0 .7vmin $outer-glow, 0 0 .8vmin $outer-glow, 0 0 1vmin $outer-glow, 0 0 15vmin $outer-glow;
+    //text-shadow: 1vmin 1vmin 1vmin #000;
     color: $time-color;
-    
-    .break & span {
-        color: invert($time-color);
+
+    span { display: inline; 
+    text-align:center;}
+
+    @media screen and (max-width: 600px) {
+        font-size: 30vmin;
     }
 }
- 
-body { 
-    background: repeating-linear-gradient(45deg, #2b2b2b 0%, #2b2b2b 10%, #222222 0%, #222222 50%) 0 / 15px 15px;
-  }
-  
+
+ol#tally {
+    grid-area: tally;
+    height: 20px;
+    padding: 1em 0;
+
+    li {
+        display: inline-block;
+        height: 5vmin;
+        border: 2px solid $inner-glow;
+        border-radius: 4px;
+        margin-right: 1ch;
+
+        &:nth-child(5n) {
+            transform: rotate(-130deg);
+            height: calc(7ch + 8px);
+            position: relative;
+            left: calc(-4ch + 6px);
+            top: 1.2em;
+        }
+    }
+}
+
+input {
+    font-size: 20px;
+    width: 100%;
+    display: inline-block;
+    -webkit-box-sizing: content-box;
+    -moz-box-sizing: content-box;
+    box-sizing: content-box;
+    padding: 10px 20px;
+    border: 1px solid #b7b7b7;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+    color: $inner-glow;
+    -o-text-overflow: clip;
+    text-overflow: clip;
+    background: rgba(0, 0, 0, 1);
+    -webkit-box-shadow: 2px 2px 2px 0 rgba(0, 0, 0, 0.2) inset;
+    box-shadow: 2px 2px 2px 0 rgba(0, 0, 0, 0.2) inset;
+    -webkit-transition: all 200ms cubic-bezier(0.42, 0, 0.58, 1);
+    -moz-transition: all 200ms cubic-bezier(0.42, 0, 0.58, 1);
+    -o-transition: all 200ms cubic-bezier(0.42, 0, 0.58, 1);
+    transition: all 200ms cubic-bezier(0.42, 0, 0.58, 1);
+}
+
 .grid-container {
-    background-image: url('/images/img-noise-361x370.png');
+    background-image: url("/images/noise.png");
     height: 100%;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 2fr 1fr;
     grid-template-rows: 1fr 1fr 1fr;
-    grid-template-areas: ". . ." ". timer ." ". . .";
+    grid-template-areas: ". . ." ". timer tally" ". . .";
+
+    &:after {
+        pointer-events: none;
+
+        /* content is required when using :after */
+        content: "";
+
+        /* The grainy image */
+        background-image: url("/images/noise.png");
+
+        /* Specify a height and width above and beyond the page header for movement */
+        height: 300%;
+        width: 300%;
+
+        /* We're using opacity in place of a transparent image */
+        //opacity: 0.3;
+        /* We'll need this when the animation kicks in to hold the position of the texture */
+        position: fixed;
+        left: -150%;
+        top: -150%;
+        animation: grain 8s steps(10) infinite;
+    }
+}
+
+@keyframes grain {
+    0%, 100% {
+        transform: translate(0, 0);
+    }
+
+    10% {
+        transform: translate(-5%, -10%);
+    }
+
+    20% {
+        transform: translate(-15%, 5%);
+    }
+
+    30% {
+        transform: translate(7%, -25%);
+    }
+
+    40% {
+        transform: translate(-5%, 25%);
+    }
+
+    50% {
+        transform: translate(-15%, 10%);
+    }
+
+    60% {
+        transform: translate(15%, 0%);
+    }
+
+    70% {
+        transform: translate(0%, 15%);
+    }
+
+    80% {
+        transform: translate(3%, 35%);
+    }
+
+    90% {
+        transform: translate(-10%, 10%);
+    }
 }
 
 .break {
     background-color: invert(#111);
-    color: invert(rgb(117, 117, 22));
+    //color: invert(rgb(117, 117, 22));
 }
 
 html, body {
-    background: rgb(63, 94, 251);
     background: radial-gradient(circle, #050505 0%, #010101 100%);
     margin: 0;
     line-height: 1;
@@ -45,4 +201,8 @@ html, body {
     background-color: #111;
     color: rgb(117, 117, 22);
     font-family: 'B612 Mono', monospace;
+}
+
+body.break {
+    background: radial-gradient(circle, #100600  0%, #010101 100%);
 }

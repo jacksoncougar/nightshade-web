@@ -1,19 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <link href="https://fonts.googleapis.com/css?family=B612+Mono" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/images/icon.png" />
+    <link href="https://fonts.googleapis.com/css?family=B612+Mono|Lato:100" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Nightshade</title>
- <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="main.css">
 </head>
+
 <body>
     <div class="grid-container">
+        <form id="task" class="task">
+            <input class="neon" type="text" name="task" placeholder="Let's work on...">
+        </form>
+
         <div id="timer" class="timer">
-            <span id="minutes">20</span>'
-            <span id="seconds">00</span>"
-      </div>      
-    <script src="bundle.js"></script>
+            <span id="minutes">
+                <div id="nixie3" class="nixie">
+                    <span class="6">6</span>
+                    <span class="7">7</span>
+                    <span class="5">5</span>
+                    <span class="8">8</span>
+                    <span class="4">4</span>
+                    <span class="3">3</span>
+                    <span class="9">9</span>
+                    <span class="1">1</span>
+                    <span class="0">0</span>
+                    <span class="2">2</span>
+                </div>
+                <div id="nixie2" class="nixie">
+                    <span class="6">6</span>
+                    <span class="7">7</span>
+                    <span class="5">5</span>
+                    <span class="8">8</span>
+                    <span class="4">4</span>
+                    <span class="3">3</span>
+                    <span class="9">9</span>
+                    <span class="1">1</span>
+                    <span class="0">0</span>
+                    <span class="2">2</span>
+                </div>
+            </span>
+            <span id="seconds">
+                <div id="nixie1" class="nixie">
+                    <span class="6">6</span>
+                    <span class="7">7</span>
+                    <span class="5">5</span>
+                    <span class="8">8</span>
+                    <span class="4">4</span>
+                    <span class="3">3</span>
+                    <span class="9">9</span>
+                    <span class="1">1</span>
+                    <span class="0">0</span>
+                    <span class="2">2</span>
+                </div>
+                <div id="nixie0" class="nixie">
+                        <span class="6">6</span>
+                        <span class="7">7</span>
+                        <span class="5">5</span>
+                        <span class="8">8</span>
+                        <span class="4">4</span>
+                        <span class="3">3</span>
+                        <span class="9">9</span>
+                        <span class="1">1</span>
+                        <span class="0">0</span>
+                        <span class="2">2</span>
+                    </div></span>
+
+        </div>
+        <script src="bundle.js"></script>
 </body>
+
 </html>
