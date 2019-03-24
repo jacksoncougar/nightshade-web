@@ -5,6 +5,8 @@ import './../scss/app.scss'
  * TODO: keep track of how many minutes each task's pomodoro was
  * TODO: display task stats
  * TODO: and a 'finished' state after x pomodoros to stop working.
+ * TODO: add a 'continue' state after timer finishes before continueing.
+ * TODO: allow more time to be added from notification (+2 minutes).
  */
 
 document.getElementById('timer').hidden = true;
@@ -60,23 +62,60 @@ var finished = false;
 
 // move into 'work' state if a task has been defined.
 
+var worker;
+
 if (qd.task != undefined) {
     document.getElementById('task').hidden = true;
     document.getElementById('timer').hidden = false;
 
-    timer(1000 * workspan * 60);
+    if (window.Worker) {
+        if (worker == undefined) {
+            worker = new Worker('worker.bundle.js');
+            worker.postMessage(1000 * workspan * 60)
+        }
+    }
+}
+
+worker.onmessage = (e) => {
+    let minutes = 0;
+    let seconds = 0;
+
+    if (e.data.finished != undefined) {
+        // timer has finished...
+        notifiy("Times up!")
+        finished = e.data.finished
+    }
+    else if (e.data.minutes != undefined && e.data.seconds != undefined) {
+        minutes = e.data.minutes;
+        seconds = e.data.seconds;
+    }
+
+    let nixie3 = document.getElementById('nixie3');
+    let nixie2 = document.getElementById('nixie2');
+    let nixie1 = document.getElementById('nixie1');
+    let nixie0 = document.getElementById('nixie0');
+
+    document.title = `${minutes.toLocaleString(undefined, { minimumIntegerDigits: 2 })}:${seconds.toLocaleString(undefined, { minimumIntegerDigits: 2 })} ${qd.task}`;
+
+    setNixie(nixie3, Math.floor(minutes / 10));
+    setNixie(nixie2, Math.floor(minutes % 10));
+    setNixie(nixie1, Math.floor(seconds / 10));
+    setNixie(nixie0, Math.floor(seconds % 10));
 }
 
 
 /**
  * Starts a timer for the current task.
  * @param {number} amount - the amount of time in milliseconds
- */
+ */ 
 function timer(amount) {
     document.getElementsByTagName('body').item(0).classList.remove('break');
-    start = Date.now() + amount;
-    t = setInterval(update, 1000);
-    setTimeout(taskFinished, amount);
+    
+    if (window.Worker) {
+        if (worker != undefined) {
+            worker.postMessage(amount)
+        }
+    }
 }
 
 /**
@@ -85,14 +124,12 @@ function timer(amount) {
  */
 function breather(amount) {
     document.getElementsByTagName('body').item(0).classList.add('break');
-    start = Date.now() + amount;
-    t = setInterval(update, 1000);
-    setTimeout(() => {
-        finished = true;
-        notifiy('Breaks over');
-        iteration++;
-
-    }, amount + 1);
+    
+    if (window.Worker) {
+        if (worker != undefined) {
+            worker.postMessage(amount)
+        }
+    }
 }
 
 function taskFinished() {
@@ -116,35 +153,6 @@ function taskFinished() {
         // update the database count for the task
         store.put({ name: qd.task, completed: count + 1 });
     };
-
-}
-
-function update() {
-    finished = false;
-
-    let nixie3 = document.getElementById('nixie3');
-    let nixie2 = document.getElementById('nixie2');
-    let nixie1 = document.getElementById('nixie1');
-    let nixie0 = document.getElementById('nixie0');
-
-
-    let moment = start - Date.now();
-    let minutes = Math.floor(moment / 1000 / 60);
-    let seconds = Math.ceil((moment - (minutes * 1000 * 60)) / 1000) % 60;
-
-
-    if (moment <= 0 && !finished) {
-        clearInterval(t)
-        finished = true
-        minutes = seconds = 0;
-    }
-
-    document.title = `${minutes.toLocaleString(undefined, { minimumIntegerDigits: 2 })}:${seconds.toLocaleString(undefined, { minimumIntegerDigits: 2 })} ${qd.task}`;
-
-    setNixie(nixie3, Math.floor(minutes / 10));
-    setNixie(nixie2, Math.floor(minutes % 10));
-    setNixie(nixie1, Math.floor(seconds / 10));
-    setNixie(nixie0, Math.floor(seconds % 10));
 }
 
 function setNixie(nixie, value) {
@@ -152,10 +160,9 @@ function setNixie(nixie, value) {
         //nixie.children[i].classList.replace('active', '');
     }
 
-    
+
     let numbers = nixie.getElementsByTagName('span');
-    for(let i = 0; i < numbers.length; i++)
-    {
+    for (let i = 0; i < numbers.length; i++) {
         numbers[i].classList.remove('active');
     }
     nixie.getElementsByClassName(value).item(0).classList.add('active');
@@ -163,6 +170,7 @@ function setNixie(nixie, value) {
 
 
 window.onclick = () => {
+    console.log(finished)
     if (!finished) return;
 
     if (iteration % 8 == 0)
