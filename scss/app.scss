@@ -14,87 +14,68 @@ $outer-glow: rgb(125, 228, 28);
     grid-area: timer;
 }
 
+#progress {
+    grid-area: progress;
+}
+
+
 .nixie {
     position: relative;
-    font-size: 15vw;
+    font-size: inherit;
     font-weight: 100;
     font-family: 'Lato';
-    color:blueviolet;
+    color: #bdb5c3;
     display: inline-block;
     width: 1ch;
     height: 1em;
 
-     
-.break & span.active {
+    .break & span.active {
         color: orange;
-        @include neon(orange, orangered )
+
+        @include neon(orange, orangered);
     }
 
     span {
+        color: transparent;
+        text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
         user-select: none;
         display: inline;
         position: absolute;
-        top: 0; 
+        top: 0;
         left: 0;
         opacity: 0.6;
-        text-shadow: 0px 0px 1px black;
         mix-blend-mode: soft-light;
 
         &.active {
             mix-blend-mode: normal;
             opacity: 1;
             color: $time-color;
+
             @include neon($inner-glow, $outer-glow);
         }
     }
 }
 
 .timer {
+    font-size: 30vmin;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr;
-    grid-template-areas: "minutes" "seconds";
-
-    justify-self: center;
-    align-self: center;
     grid-area: timer;
-    padding: 0.2rem 1rem;
-    //text-shadow: 1vmin 1vmin 1vmin #000;
     color: $time-color;
 
-    span { display: inline; 
-    text-align:center;}
+    #seconds, #minutes {
+        display: flex;
+    }
 
     @media screen and (max-width: 600px) {
         font-size: 30vmin;
-    }
-}
-
-ol#tally {
-    grid-area: tally;
-    height: 20px;
-    padding: 1em 0;
-
-    li {
-        display: inline-block;
-        height: 5vmin;
-        border: 2px solid $inner-glow;
-        border-radius: 4px;
-        margin-right: 1ch;
-
-        &:nth-child(5n) {
-            transform: rotate(-130deg);
-            height: calc(7ch + 8px);
-            position: relative;
-            left: calc(-4ch + 6px);
-            top: 1.2em;
-        }
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr;
     }
 }
 
 input {
     font-size: 20px;
-    width: 100%;
     display: inline-block;
     -webkit-box-sizing: content-box;
     -moz-box-sizing: content-box;
@@ -113,15 +94,17 @@ input {
     -moz-transition: all 200ms cubic-bezier(0.42, 0, 0.58, 1);
     -o-transition: all 200ms cubic-bezier(0.42, 0, 0.58, 1);
     transition: all 200ms cubic-bezier(0.42, 0, 0.58, 1);
+    vertical-align: bottom;
 }
 
 .grid-container {
     background-image: url("/images/noise.png");
     height: 100%;
     display: grid;
-    grid-template-columns: 1fr 2fr 1fr;
-    grid-template-rows: 1fr 1fr 1fr;
-    grid-template-areas: ". . ." ". timer tally" ". . .";
+    justify-items: center;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto auto 1fr;
+    grid-template-areas: "." "timer" "progress" ".";
 
     &:after {
         pointer-events: none;
@@ -190,6 +173,7 @@ input {
 
 .break {
     background-color: invert(#111);
+
     //color: invert(rgb(117, 117, 22));
 }
 
@@ -204,5 +188,5 @@ html, body {
 }
 
 body.break {
-    background: radial-gradient(circle, #100600  0%, #010101 100%);
+    background: radial-gradient(circle, #100600 0%, #010101 100%);
 }

@@ -8,17 +8,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Nightshade</title>
-    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="index.css">
 </head>
 
 <body>
     <div class="grid-container">
         <form id="task" class="task">
-            <input class="neon" type="text" name="task" placeholder="Let's work on...">
+            <input type="text" name="task" placeholder="Let's work on...">
+            <input type="button" name="task" value=">">
         </form>
 
         <div id="timer" class="timer">
-            <span id="minutes">
+            <div id="minutes">
                 <div id="nixie3" class="nixie">
                     <span class="6">6</span>
                     <span class="7">7</span>
@@ -43,8 +44,8 @@
                     <span class="0">0</span>
                     <span class="2">2</span>
                 </div>
-            </span>
-            <span id="seconds">
+            </div>
+            <div id="seconds">
                 <div id="nixie1" class="nixie">
                     <span class="6">6</span>
                     <span class="7">7</span>
@@ -58,19 +59,22 @@
                     <span class="2">2</span>
                 </div>
                 <div id="nixie0" class="nixie">
-                        <span class="6">6</span>
-                        <span class="7">7</span>
-                        <span class="5">5</span>
-                        <span class="8">8</span>
-                        <span class="4">4</span>
-                        <span class="3">3</span>
-                        <span class="9">9</span>
-                        <span class="1">1</span>
-                        <span class="0">0</span>
-                        <span class="2">2</span>
-                    </div></span>
+                    <span class="6">6</span>
+                    <span class="7">7</span>
+                    <span class="5">5</span>
+                    <span class="8">8</span>
+                    <span class="4">4</span>
+                    <span class="3">3</span>
+                    <span class="9">9</span>
+                    <span class="1">1</span>
+                    <span class="0">0</span>
+                    <span class="2">2</span>
+                </div>
+            </div>
 
         </div>
+
+        <div id="progress"></div>
         <script src="index.bundle.js"></script>
 </body>
 

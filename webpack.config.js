@@ -12,6 +12,7 @@ module.exports = {
     },
     entry: {
         index: "./src/index.js",
+        sw: "./src/sw.js",
         worker: "./src/worker.js"
     },
     devtool: 'inline-source-map',

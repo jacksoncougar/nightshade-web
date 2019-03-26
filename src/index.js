@@ -9,10 +9,8 @@ import './../scss/app.scss'
  * TODO: allow more time to be added from notification (+2 minutes).
  */
 
-document.getElementById('timer').hidden = true;
-var start = 0;
+document.getElementById('timer').style.visibility = 'hidden'
 var iteration = 1;
-var t;
 
 
 // try to open the indexedDB storage
@@ -42,8 +40,6 @@ if (location.search) location.search.substr(1).split("&").forEach(function (item
     (qd[k] = qd[k] || []).push(v) // null-coalescing / short-circuit
 })
 
-console.log(qd)
-
 /**
  * Replaces all occurences of the search pattern with the given replacement.
  * @param {string} target the string on witch to apply the replacements
@@ -58,20 +54,20 @@ function replaceAll(target, search, replace) {
 
 var workspan = qd.timer || 20
 var breakspan = qd.break || 4
-var finished = false;
+var finished = true;
 
 // move into 'work' state if a task has been defined.
 
 var worker;
 
 if (qd.task != undefined) {
-    document.getElementById('task').hidden = true;
-    document.getElementById('timer').hidden = false;
+    document.getElementById('task').style.visibility = 'hidden';
+    document.getElementById('timer').style.visibility = 'visible';
 
     if (window.Worker) {
         if (worker == undefined) {
             worker = new Worker('worker.bundle.js');
-            worker.postMessage(1000 * workspan * 60)
+            worker.postMessage({wait: true})
         }
     }
 }
@@ -80,15 +76,20 @@ worker.onmessage = (e) => {
     let minutes = 0;
     let seconds = 0;
 
-    if (e.data.finished != undefined) {
-        // timer has finished...
-        notifiy("Times up!")
-        finished = e.data.finished
-    }
-    else if (e.data.minutes != undefined && e.data.seconds != undefined) {
+    if (e.data.minutes != undefined && e.data.seconds != undefined) {
         minutes = e.data.minutes;
         seconds = e.data.seconds;
     }
+
+    if (e.data.finished != undefined) {
+        notifiy("Times up!")
+
+        finished = e.data.finished
+        iteration++;
+
+        callback();
+    }
+
 
     let nixie3 = document.getElementById('nixie3');
     let nixie2 = document.getElementById('nixie2');
@@ -104,15 +105,31 @@ worker.onmessage = (e) => {
 }
 
 
+if (navigator.serviceWorker != undefined) {
+    console.log('sw supported')
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.bundle.js').then((sw) => {
+            console.log('ServiceWorker registration successful with scope: ', sw.scope);
+        }, function (err) {
+            // registration failed :(
+            console.log('ServiceWorker registration failed: ', err);
+        })
+    })
+}
+
+var callback = () => console.log('nothing here')
+
+
 /**
  * Starts a timer for the current task.
  * @param {number} amount - the amount of time in milliseconds
- */ 
+ */
 function timer(amount) {
     document.getElementsByTagName('body').item(0).classList.remove('break');
-    
+
     if (window.Worker) {
         if (worker != undefined) {
+            callback = () => document.getElementById('progress').innerText += " x"
             worker.postMessage(amount)
         }
     }
@@ -124,9 +141,10 @@ function timer(amount) {
  */
 function breather(amount) {
     document.getElementsByTagName('body').item(0).classList.add('break');
-    
+
     if (window.Worker) {
         if (worker != undefined) {
+            callback = () => document.getElementById('progress').innerText += " o"
             worker.postMessage(amount)
         }
     }
@@ -156,11 +174,6 @@ function taskFinished() {
 }
 
 function setNixie(nixie, value) {
-    for (let i = 0; i < nixie.children.length; i++) {
-        //nixie.children[i].classList.replace('active', '');
-    }
-
-
     let numbers = nixie.getElementsByTagName('span');
     for (let i = 0; i < numbers.length; i++) {
         numbers[i].classList.remove('active');
@@ -181,22 +194,7 @@ window.onclick = () => {
 }
 
 function notifiy(msg) {
-    // Let's check whether notification permissions have already been granted
-    if (Notification.permission === "granted") {
-        // If it's okay let's create a notification
-        var notification = new Notification(msg, { icon: './images/icon.png', requireInteraction: true, tag: 'task', renotify: true });
-        notification.onclick = () => { parent.focus(); }
-
-    }
-
-    // Otherwise, we need to ask the user for permission
-    else if (Notification.permission !== 'denied') {
-        Notification.requestPermission(function (permission) {
-            // If the user accepts, let's create a notification
-            if (permission === "granted") {
-                var notification = new Notification(msg, { icon: './images/icon.png', requireInteraction: true, tag: 'task', renotify: true });
-                notification.onclick = () => { parent.focus(); this.close(); }
-            }
-        });
-    }
+    navigator.serviceWorker.getRegistrations().then(function (registrations) {
+        registrations[0].showNotification('Finished');
+    });
 }

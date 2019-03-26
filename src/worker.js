@@ -1,4 +1,8 @@
 onmessage = (e) => {
+
+    console.log(e)
+    if(e.data.wait) return;
+
     start = Date.now() + e.data
     console.log(start);
     setInterval(update, 1000);
@@ -11,12 +15,12 @@ var t
 
 function update() {
     if(finished) return;
-    
+
     let moment = start - Date.now()
     let minutes = Math.floor(moment / 1000 / 60)
     let seconds = Math.ceil((moment - (minutes * 1000 * 60)) / 1000) % 60
 
-    if (moment <= 0 && !finished) {
+    if (moment <= 0) {
         clearInterval(t)
         finished = true
         minutes = seconds = 0
