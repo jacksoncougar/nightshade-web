@@ -2,7 +2,6 @@ onmessage = (e) => {
 
     console.log(e)
     if(e.data.wait) return;
-
     start = Date.now() + e.data
     console.log(start);
     setInterval(update, 1000);

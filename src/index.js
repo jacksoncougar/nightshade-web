@@ -12,7 +12,7 @@ import './../scss/app.scss'
 
 document.getElementById('timer').style.visibility = 'hidden'
 document.getElementById('task').style.visibility = 'hidden'
-document.getElementById('progress').style.visibility = 'hidden'
+document.getElementById('progress').style.visibility = 'visible'
 
 var iteration = 1;
 
@@ -67,16 +67,17 @@ if (window.Worker) {
     }
 }
 
-if (qd.task != undefined) {
-    document.getElementById('task').style.visibility = 'hidden';
-    document.getElementById('timer').style.visibility = 'visible';
+window.onload = (e) => {
+    if (qd.task != undefined) {
+        document.getElementById('task').style.visibility = 'hidden';
+        document.getElementById('timer').style.visibility = 'visible';
 
-    if(worker)    timer(workspan)
-}
-else
-{
+        if (worker) timer(workspan)
+    }
+    else {
 
-    document.getElementById('task').style.visibility = 'visible';
+        document.getElementById('task').style.visibility = 'visible';
+    }
 }
 
 worker.onmessage = (e) => {
@@ -111,15 +112,13 @@ worker.onmessage = (e) => {
 }
 
 
-if (navigator.serviceWorker != undefined) {
+if ('serviceWorker' in navigator) {
     console.log('sw supported')
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.bundle.js').then((sw) => {
-            console.log('ServiceWorker registration successful with scope: ', sw.scope);
-        }, function (err) {
-            // registration failed :(
-            console.log('ServiceWorker registration failed: ', err);
-        })
+    navigator.serviceWorker.register('sw.bundle.js').then((sw) => {
+        console.log('ServiceWorker registration successful with scope: ', sw.scope);
+    }, function (err) {
+        // registration failed :(
+        console.log('ServiceWorker registration failed: ', err);
     })
 }
 
@@ -131,13 +130,13 @@ var callback = () => console.log('nothing here')
  * @param {number} amount - the amount of time in milliseconds
  */
 function timer(amount) {
+
+    console.log('starting timer')
     document.getElementsByTagName('body').item(0).classList.remove('break');
 
-    if (window.Worker) {
-        if (worker != undefined) {
-            callback = () => document.getElementById('progress').innerText += " x"
-            worker.postMessage(amount * 1000 * 60)
-        }
+    if (window.Worker && worker != undefined) {
+        callback = () => document.getElementById('progress').innerText += " x"
+        worker.postMessage(amount * 1000 * 60)
     }
 }
 
@@ -188,7 +187,9 @@ function setNixie(nixie, value) {
         nixie.getElementsByClassName(value).item(0).classList.add('active');
 }
 
-
+Notification.requestPermission(function (status) {
+    console.log('Notification permission status:', status);
+});
 
 function begin() {
     console.log(finished)
@@ -207,7 +208,9 @@ window.onkeypress = (e) => {
 }
 
 function notifiy(msg) {
-    navigator.serviceWorker.getRegistrations().then(function (registrations) {
-        registrations[0].showNotification('Finished');
-    });
+    if (Notification.permission == 'granted') {
+        navigator.serviceWorker.getRegistration().then(registration => {
+            registration.showNotification('All done!', {tag: 'task', renotify: true, requireInteraction: true, icon: 'images/icon.png', image: 'https://static1.squarespace.com/static/53fccdc3e4b06d598890737d/54231dffe4b07bb558b1e0d2/54231e31e4b057212f157ec5/1517947886108/GINGERWHITECOFFEELAND.jpg' })
+        });
+    }
 }

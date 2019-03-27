@@ -3,16 +3,13 @@
 
 var path = require("path");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-var SWPrecacheWebpackPlugin = require('sw-precache-webpack-plugin');
-
-const PUBLIC_PATH = 'https://nightshade-74ece.firebaseapp.com/';
 
 module.exports = {
     mode: 'development',
     devServer: {
         contentBase: path.join(__dirname, 'dist'),
         compress: true,
-        port: 9000
+        port: 9000,
     },
     entry: {
         index: "./src/index.js",
@@ -23,7 +20,7 @@ module.exports = {
     output: { 
         path: path.resolve(__dirname, "dist"),
         filename: "[name].bundle.js",
-        publicPath: "/dist"
+        publicPath: "/dist/"
     },
     plugins: [
         new MiniCssExtractPlugin({
@@ -32,15 +29,6 @@ module.exports = {
             filename: "[name].css",
             chunkFilename: "[id].css"
         }),
-        new SWPrecacheWebpackPlugin(
-            {
-              cacheId: 'my-project-name',
-              dontCacheBustUrlsMatching: /\.\w{8}\./,
-              filename: 'service-worker.js',
-              minify: true,
-              navigateFallback: PUBLIC_PATH + 'index.html',
-              staticFileGlobsIgnorePatterns: [/\.map$/, /asset-manifest\.json$/],
-            })
     ],
     module: {
         rules: [
