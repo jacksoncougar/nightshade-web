@@ -17,6 +17,7 @@
     "node-sass": "^4.11.0",
     "sass": "^1.17.2",
     "sass-loader": "^7.1.0",
+    "sw-precache-webpack-plugin": "^0.11.5",
     "webpack-cli": "^3.2.3",
     "webpack-dev-server": "^3.2.1"
   },

@@ -9,11 +9,13 @@ import './../scss/app.scss'
  * TODO: allow more time to be added from notification (+2 minutes).
  */
 
+
 document.getElementById('timer').style.visibility = 'hidden'
+document.getElementById('task').style.visibility = 'hidden'
+document.getElementById('progress').style.visibility = 'hidden'
+
 var iteration = 1;
 
-
-// try to open the indexedDB storage
 var db;
 var request = window.indexedDB.open("nightshade-db", 1);
 
@@ -28,7 +30,6 @@ request.onupgradeneeded = (e) => {
     objectStore.createIndex("completed",
         "completed", { unique: false });
 }
-
 
 // parse the query selector in the url
 var qd = {};
@@ -60,16 +61,22 @@ var finished = true;
 
 var worker;
 
+if (window.Worker) {
+    if (worker == undefined) {
+        worker = new Worker('worker.bundle.js');
+    }
+}
+
 if (qd.task != undefined) {
     document.getElementById('task').style.visibility = 'hidden';
     document.getElementById('timer').style.visibility = 'visible';
 
-    if (window.Worker) {
-        if (worker == undefined) {
-            worker = new Worker('worker.bundle.js');
-            worker.postMessage({wait: true})
-        }
-    }
+    if(worker)    timer(workspan)
+}
+else
+{
+
+    document.getElementById('task').style.visibility = 'visible';
 }
 
 worker.onmessage = (e) => {
@@ -87,9 +94,8 @@ worker.onmessage = (e) => {
         finished = e.data.finished
         iteration++;
 
-        callback();
+        callback(); // do whatever needs doing when the timer expires...
     }
-
 
     let nixie3 = document.getElementById('nixie3');
     let nixie2 = document.getElementById('nixie2');
@@ -130,7 +136,7 @@ function timer(amount) {
     if (window.Worker) {
         if (worker != undefined) {
             callback = () => document.getElementById('progress').innerText += " x"
-            worker.postMessage(amount)
+            worker.postMessage(amount * 1000 * 60)
         }
     }
 }
@@ -145,7 +151,7 @@ function breather(amount) {
     if (window.Worker) {
         if (worker != undefined) {
             callback = () => document.getElementById('progress').innerText += " o"
-            worker.postMessage(amount)
+            worker.postMessage(amount * 1000 * 60)
         }
     }
 }
@@ -178,19 +184,26 @@ function setNixie(nixie, value) {
     for (let i = 0; i < numbers.length; i++) {
         numbers[i].classList.remove('active');
     }
-    nixie.getElementsByClassName(value).item(0).classList.add('active');
+    if (0 <= value && value <= 9)
+        nixie.getElementsByClassName(value).item(0).classList.add('active');
 }
 
 
-window.onclick = () => {
+
+function begin() {
     console.log(finished)
     if (!finished) return;
 
     if (iteration % 8 == 0)
-        return breather(1000 * 2 * breakspan * 60); // ten minute timer
+        return breather(2 * breakspan); // ten minute timer
     else if (iteration % 2 == 0)
-        return breather(1000 * breakspan * 60); // ten minute timer
-    else return timer(1000 * workspan * 60); // ten minute timer
+        return breather(breakspan); // ten minute timer
+    else return timer(workspan); // ten minute timer
+}
+
+window.onclick = begin;
+window.onkeypress = (e) => {
+    if (e.key == ' ') begin();
 }
 
 function notifiy(msg) {

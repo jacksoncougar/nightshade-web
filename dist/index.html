@@ -5,8 +5,10 @@
     <link rel="icon" type="image/png" href="/images/icon.png" />
     <link href="https://fonts.googleapis.com/css?family=B612+Mono|Lato:100" rel="stylesheet">
     <meta charset="UTF-8">
+    <meta name="theme-color" content="#000000">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="manifest" href="manifest.json">
     <title>Nightshade</title>
     <link rel="stylesheet" href="index.css">
 </head>
@@ -14,7 +16,7 @@
 <body>
     <div class="grid-container">
         <form id="task" class="task">
-            <input type="text" name="task" placeholder="Let's work on...">
+            <input id="task-name" type="text" name="task" placeholder="Let's work on...">
             <input type="button" name="task" value=">">
         </form>
 
