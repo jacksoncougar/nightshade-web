@@ -14,6 +14,10 @@ document.getElementById('timer').style.visibility = 'hidden'
 document.getElementById('task').style.visibility = 'hidden'
 document.getElementById('progress').style.visibility = 'visible'
 
+var token = document.getElementById('token');
+
+var state = 'start';
+
 var iteration = 1;
 
 var db;
@@ -81,18 +85,18 @@ window.onload = (e) => {
 }
 
 worker.onmessage = (e) => {
-    let minutes = 0;
-    let seconds = 0;
+    let minutes = 99;
+    let seconds = 99;
 
     if (e.data.minutes != undefined && e.data.seconds != undefined) {
         minutes = e.data.minutes;
         seconds = e.data.seconds;
     }
 
-    if (e.data.finished != undefined) {
+    if (e.data.finished) {
         notifiy("Times up!")
 
-        finished = e.data.finished
+        finished = true;
         iteration++;
 
         callback(); // do whatever needs doing when the timer expires...
@@ -132,10 +136,13 @@ var callback = () => console.log('nothing here')
 function timer(amount) {
 
     console.log('starting timer')
+    state = 'work'
+    finished = false
     document.getElementsByTagName('body').item(0).classList.remove('break');
 
     if (window.Worker && worker != undefined) {
-        callback = () => document.getElementById('progress').innerText += " x"
+        callback = () => document.getElementById('progress')
+        .appendChild(getWorkToken());
         worker.postMessage(amount * 1000 * 60)
     }
 }
@@ -145,14 +152,30 @@ function timer(amount) {
  * @param {number} amount - the amount of time in milliseconds
  */
 function breather(amount) {
+    state = 'break'
+    finished = false
     document.getElementsByTagName('body').item(0).classList.add('break');
-
     if (window.Worker) {
         if (worker != undefined) {
-            callback = () => document.getElementById('progress').innerText += " o"
+            callback = () => document.getElementById('progress').appendChild(getBreakToken())
             worker.postMessage(amount * 1000 * 60)
         }
     }
+}
+
+function getBreakToken() 
+{
+    let btoken = token.content.cloneNode(true)
+    btoken.getElementById('icon').classList.remove('work')
+    btoken.getElementById('icon').classList.add('break')
+    return btoken;
+}
+
+
+function getWorkToken() 
+{
+    let wtoken = token.content.cloneNode(true)
+    return wtoken;
 }
 
 function taskFinished() {
@@ -191,8 +214,35 @@ Notification.requestPermission(function (status) {
     console.log('Notification permission status:', status);
 });
 
+var _key = undefined;
+var count = 0;
+
+function resetDebounce() {
+    _key = undefined;
+    count = 0;
+}
+
+function debounceKey(key)
+{
+    if(key != _key) 
+    {
+        count = 0
+     _key = key
+    }
+
+    let result = ++count;
+    
+    if(debounce) clearTimeout(debounce);
+    debounce = setTimeout(resetDebounce, 200)
+
+    return result;
+}
+
+var debounce;
+
 function begin() {
     console.log(finished)
+
     if (!finished) return;
 
     if (iteration % 8 == 0)
@@ -203,14 +253,23 @@ function begin() {
 }
 
 window.onclick = begin;
-window.onkeypress = (e) => {
-    if (e.key == ' ') begin();
+document.onkeydown = (e) => {
+    e = e || window.event;
+    let presses = debounceKey(e.key)
+    if (e.key == ' ') return begin();
+    if(e.key == 'Escape') 
+    {
+        if(presses >= 3 && state == 'work') return breather(breakspan)
+        if(presses >= 2 && state == 'break') return timer(workspan)
+    }
 }
 
 function notifiy(msg) {
     if (Notification.permission == 'granted') {
         navigator.serviceWorker.getRegistration().then(registration => {
-            registration.showNotification('All done!', {tag: 'task', renotify: true, requireInteraction: true, icon: 'images/icon.png', image: 'https://static1.squarespace.com/static/53fccdc3e4b06d598890737d/54231dffe4b07bb558b1e0d2/54231e31e4b057212f157ec5/1517947886108/GINGERWHITECOFFEELAND.jpg' })
+            var notification = registration.showNotification('All done!', {tag: 'task', renotify: true, requireInteraction: true, icon: 'images/icon.png', image: 'https://static1.squarespace.com/static/53fccdc3e4b06d598890737d/54231dffe4b07bb558b1e0d2/54231e31e4b057212f157ec5/1517947886108/GINGERWHITECOFFEELAND.jpg' })
+
+            notification.onclick = () => { parent.focus(); window.focus(); this.close(); }
         });
     }
 }
