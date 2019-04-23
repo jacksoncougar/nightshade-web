@@ -1,4 +1,4 @@
-var cacheName = 'nightshade-app-cache'
+var cacheName = `nightshade-app-cache${Date.now}`
 
 self.addEventListener('install', function (event) {
   console.log('sw installed')
@@ -31,7 +31,7 @@ self.addEventListener('fetch', function (event) {
 
 self.addEventListener('activate', function (event) {
   event.waitUntil(
-    caches.keys().then(function (name) {
+    caches.keys().then(function (cacheNames) {
       return Promise.all(
         cacheNames.filter(function (name) {
           // Return true if you want to remove this cache,

@@ -10,3 +10,42 @@
 
 Want to work on X for 1 hour today.
 
+== States
+
+[plantuml]
+----
+[*] --> select
+select -> working
+working -> idle
+idle -> working
+idle -> break
+break -> idle
+
+select : enter the name \nof the task
+working : count down from 20:00
+idle: wait for response
+break: count down from 5:00
+
+idle -> [*] : stop
+working -> [*] : stop
+break -> [*] : stop
+----
+
+== Working Activity Diagram
+
+
+[plantuml, working-states, png]
+....
+start
+:set timer for 20:00;
+
+while (timer) is (not finished)
+ if (break needed) then (yes)
+ end
+ else (no)
+ endif
+endwhile (timer is zero)
+:send alert;
+:update stats;
+end
+....

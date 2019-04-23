@@ -9,6 +9,11 @@ import './../scss/app.scss'
  * TODO: allow more time to be added from notification (+2 minutes).
  */
 
+/**
+ * CHANGELOG:
+ * 
+ * - store number of completed tasks in indexedDB and display number of completed tasks when corresponding task is re-started.
+ */
 
 document.getElementById('timer').style.visibility = 'hidden'
 document.getElementById('task').style.visibility = 'hidden'
@@ -25,6 +30,21 @@ var request = window.indexedDB.open("nightshade-db", 1);
 
 request.onsuccess = (e) => {
     db = event.target.result;
+
+    let store = db.transaction(
+        ['tasks'], 'readonly').objectStore('tasks');
+    
+    store.get(qd.task).onsuccess = (e) => {
+    
+        // check if there was an existing count otherwise start anew.
+        let count = (e.target.result && e.target.result.completed || 0)
+            || 0;
+    
+        for (let index = 0; index < count; index++) {
+            document.getElementById('progress')
+                    .appendChild(getWorkToken());        
+        }
+    };
 }
 
 request.onupgradeneeded = (e) => {
@@ -94,14 +114,11 @@ worker.onmessage = (e) => {
     }
 
     if (e.data.finished) {
-        notifiy("Times up!")
-
-        finished = true;
-        iteration++;
-
         callback(); // do whatever needs doing when the timer expires...
     }
 
+    if(!finished)
+    {
     let nixie3 = document.getElementById('nixie3');
     let nixie2 = document.getElementById('nixie2');
     let nixie1 = document.getElementById('nixie1');
@@ -113,6 +130,7 @@ worker.onmessage = (e) => {
     setNixie(nixie2, Math.floor(minutes % 10));
     setNixie(nixie1, Math.floor(seconds / 10));
     setNixie(nixie0, Math.floor(seconds % 10));
+    }
 }
 
 
@@ -141,8 +159,12 @@ function timer(amount) {
     document.getElementsByTagName('body').item(0).classList.remove('break');
 
     if (window.Worker && worker != undefined) {
-        callback = () => document.getElementById('progress')
-        .appendChild(getWorkToken());
+        callback = () => {
+        taskFinished();
+            return document.getElementById('progress')
+                .appendChild(getWorkToken());
+                
+        };
         worker.postMessage(amount * 1000 * 60)
     }
 }
@@ -163,8 +185,7 @@ function breather(amount) {
     }
 }
 
-function getBreakToken() 
-{
+function getBreakToken() {
     let btoken = token.content.cloneNode(true)
     btoken.getElementById('icon').classList.remove('work')
     btoken.getElementById('icon').classList.add('break')
@@ -172,8 +193,7 @@ function getBreakToken()
 }
 
 
-function getWorkToken() 
-{
+function getWorkToken() {
     let wtoken = token.content.cloneNode(true)
     return wtoken;
 }
@@ -181,7 +201,6 @@ function getWorkToken()
 function taskFinished() {
     finished = true;
     notifiy("Times up")
-
     iteration++;
 
     document.title = `finished ${qd.task}`;
@@ -222,17 +241,17 @@ function resetDebounce() {
     count = 0;
 }
 
-function debounceKey(key)
-{
-    if(key != _key) 
-    {
+function debounceKey(key) {
+    if (!key) { count = 0; }
+
+    if (key != _key) {
         count = 0
-     _key = key
+        _key = key
     }
 
     let result = ++count;
-    
-    if(debounce) clearTimeout(debounce);
+
+    if (debounce) clearTimeout(debounce);
     debounce = setTimeout(resetDebounce, 200)
 
     return result;
@@ -245,11 +264,9 @@ function begin() {
 
     if (!finished) return;
 
-    if (iteration % 8 == 0)
-        return breather(2 * breakspan); // ten minute timer
-    else if (iteration % 2 == 0)
-        return breather(breakspan); // ten minute timer
-    else return timer(workspan); // ten minute timer
+    if(state == 'break') return timer(workspan)
+    else return breather(iteration > 0 && iteration % 4 == 0 ? 
+        2 * breakspan : breakspan)
 }
 
 window.onclick = begin;
@@ -257,17 +274,23 @@ document.onkeydown = (e) => {
     e = e || window.event;
     let presses = debounceKey(e.key)
     if (e.key == ' ') return begin();
-    if(e.key == 'Escape') 
-    {
-        if(presses >= 3 && state == 'work') return breather(breakspan)
-        if(presses >= 2 && state == 'break') return timer(workspan)
+
+    if (e.key == 'Escape') {
+        if (presses >= 3 && state == 'work') {
+            debounceKey();
+            return breather(breakspan)
+        }
+        if (presses >= 3 && state == 'break') {
+            debounceKey();
+            return timer(workspan)
+        }
     }
 }
 
 function notifiy(msg) {
     if (Notification.permission == 'granted') {
         navigator.serviceWorker.getRegistration().then(registration => {
-            var notification = registration.showNotification('All done!', {tag: 'task', renotify: true, requireInteraction: true, icon: 'images/icon.png', image: 'https://static1.squarespace.com/static/53fccdc3e4b06d598890737d/54231dffe4b07bb558b1e0d2/54231e31e4b057212f157ec5/1517947886108/GINGERWHITECOFFEELAND.jpg' })
+            var notification = registration.showNotification('All done!', { tag: 'task', renotify: true, requireInteraction: true, icon: 'images/icon.png', image: 'https://static1.squarespace.com/static/53fccdc3e4b06d598890737d/54231dffe4b07bb558b1e0d2/54231e31e4b057212f157ec5/1517947886108/GINGERWHITECOFFEELAND.jpg' })
 
             notification.onclick = () => { parent.focus(); window.focus(); this.close(); }
         });
