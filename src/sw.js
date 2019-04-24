@@ -1,4 +1,4 @@
-var cacheName = `nightshade-app-cache-${Date.now}`;
+var cacheName = "nightshade-app-cache-" + Date.now();
 
 self.addEventListener("install", function(event) {
   console.log("sw installed");
@@ -49,17 +49,15 @@ self.addEventListener("notificationclick", event => {
 });
 
 self.addEventListener("activate", function(event) {
-  event.waitUntil(
-    caches.keys().then(function(cacheNames) {
-      return Promise.all(
-        cacheNames
-          .filter(function(name) {
-            return name != cacheName;
-          })
-          .map(function(name) {
-            return caches.delete(cacheName);
-          })
-      );
-    })
-  );
+  console.log("sw is actived");
+  caches.keys().then(function(keys) {
+    keys.forEach(function(key) {
+      console.log(key);
+      if (!key.includes(cacheName)) {
+        caches.delete(key).then(function(result) {
+          if (result) console.log("deleted " + key);
+        });
+      }
+    });
+  });
 });

@@ -13,6 +13,7 @@ module.exports = {
   },
   entry: {
     index: "./src/index.js",
+    timer: "./src/timer.js",
     sw: "./src/sw.js",
     worker: "./src/worker.js"
   },
@@ -36,7 +37,9 @@ module.exports = {
         test: /\.js$/,
         use: {
           loader: "babel-loader",
-          options: { presets: ["env"] }
+          options: {
+            presets: ["@babel/preset-env"]
+          }
         }
       },
       {

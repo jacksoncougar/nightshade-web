@@ -1,5 +1,8 @@
-import "./../scss/app.scss";
+/* eslint-disable no-useless-return */
+/* eslint-disable no-restricted-globals */
 
+import "../scss/app.scss";
+import { replaceAll } from "util";
 /**
  * TODO: save the current timer time between refreshes
  * TODO: keep track of how many minutes each task's pomodoro was
@@ -23,80 +26,75 @@ document.getElementById("timer").style.visibility = "hidden";
 document.getElementById("task").style.visibility = "hidden";
 document.getElementById("progress").style.visibility = "visible";
 
-var token = document.getElementById("token");
+const nixie3 = document.getElementById("nixie3");
+const nixie2 = document.getElementById("nixie2");
+const nixie1 = document.getElementById("nixie1");
+const nixie0 = document.getElementById("nixie0");
 
-var state = "start";
+const token = document.getElementById("token");
 
-var iteration = 1;
+let state = "start";
+let iteration = 1;
+let db;
 
-var db;
-var request = window.indexedDB.open("nightshade-db", 1);
+const request = window.indexedDB.open("nightshade-db", 1);
 
 request.onsuccess = e => {
   db = event.target.result;
 
-  let store = db.transaction(["tasks"], "readonly").objectStore("tasks");
+  const store = db.transaction(["tasks"], "readonly").objectStore("tasks");
 
-  if (qd.task)
+  if (qd.task) {
     store.get(qd.task).onsuccess = e => {
       // check if there was an existing count otherwise start anew.
-      let count = (e.target.result && e.target.result.completed) || 0 || 0;
+      const count = (e.target.result && e.target.result.completed) || 0 || 0;
 
       for (let index = 0; index < count; index++) {
         document.getElementById("progress").appendChild(getWorkToken());
       }
     };
+  }
 };
 
 request.onupgradeneeded = e => {
-  let db = e.target.result;
-  let objectStore = db.createObjectStore("tasks", { keyPath: "name" });
+  const db = e.target.result;
+  const objectStore = db.createObjectStore("tasks", { keyPath: "name" });
 
   objectStore.createIndex("completed", "completed", { unique: false });
 };
 
 // parse the query selector in the url
-var qd = {};
-if (location.search)
+const qd = {};
+if (location.search) {
   location.search
     .substr(1)
     .split("&")
-    .forEach(function(item) {
-      var s = item.split("="),
-        k = s[0],
-        v = s[1] && replaceAll(decodeURIComponent(s[1]), /\+/, " "); //  null-coalescing / short-circuit
+    .forEach(item => {
+      const s = item.split("=");
+      const k = s[0];
+      const v = s[1] && replaceAll(decodeURIComponent(s[1]), /\+/, " "); //  null-coalescing / short-circuit
       (qd[k] = qd[k] || []).push(v); // null-coalescing / short-circuit
     });
-
-/**
- * Replaces all occurences of the search pattern with the given replacement.
- * @param {string} target the string on witch to apply the replacements
- * @param {string|Regex} search the pattern to replace
- * @param {string} replace the replacement value.
- */
-function replaceAll(target, search, replace) {
-  return target.split(search).join(replace);
 }
 
 // initialize program arguments.
 
-var workspan = qd.timer || 20;
-var breakspan = qd.break || 4;
-var finished = true;
+const workspan = qd.timer || 20;
+const breakspan = qd.break || 4;
+let finished = true;
 
 // move into 'work' state if a task has been defined.
 
-var worker;
+let worker;
 
 if (window.Worker) {
-  if (worker == undefined) {
+  if (worker === undefined) {
     worker = new Worker("worker.bundle.js");
   }
 }
 
-window.onload = e => {
-  var context = new AudioContext();
-  if (qd.task != undefined) {
+window.onload = () => {
+  if (qd.task !== undefined) {
     document.getElementById("task").style.visibility = "hidden";
     document.getElementById("timer").style.visibility = "visible";
 
@@ -110,21 +108,16 @@ worker.onmessage = e => {
   let minutes = 99;
   let seconds = 99;
 
-  if (e.data.minutes != undefined && e.data.seconds != undefined) {
-    minutes = e.data.minutes;
-    seconds = e.data.seconds;
+  if (e.data.minutes !== undefined && e.data.seconds !== undefined) {
+    [minutes, seconds] = e.data;
   }
 
   if (e.data.finished) {
-    callback(); // do whatever needs doing when the timer expires...
+    // do whatever needs doing when the timer expires...
+    callback();
   }
 
   if (!finished) {
-    let nixie3 = document.getElementById("nixie3");
-    let nixie2 = document.getElementById("nixie2");
-    let nixie1 = document.getElementById("nixie1");
-    let nixie0 = document.getElementById("nixie0");
-
     document.title = `${minutes.toLocaleString(undefined, {
       minimumIntegerDigits: 2
     })}:${seconds.toLocaleString(undefined, { minimumIntegerDigits: 2 })} ${
@@ -147,7 +140,7 @@ if ("serviceWorker" in navigator) {
         sw.scope
       );
     },
-    function(err) {
+    err => {
       // registration failed :(
       console.log("ServiceWorker registration failed: ", err);
     }
@@ -201,21 +194,21 @@ function breather(amount) {
 }
 
 function getBreakToken() {
-  let btoken = token.content.cloneNode(true);
+  const btoken = token.content.cloneNode(true);
   btoken.getElementById("icon").classList.remove("work");
   btoken.getElementById("icon").classList.add("break");
   return btoken;
 }
 
 function getWorkToken() {
-  let wtoken = token.content.cloneNode(true);
+  const wtoken = token.content.cloneNode(true);
   return wtoken;
 }
 
 function taskFinished() {
   finished = true;
 
-  let sound = new Audio("sounds/temple-bell.mp3");
+  const sound = new Audio("sounds/temple-bell.mp3");
   sound.play().catch(error => console.log(error));
   notifiy("Times up");
   iteration++;
@@ -223,11 +216,11 @@ function taskFinished() {
   document.title = `finished ${qd.task}`;
 
   // increment how many times this task was completed in the database.
-  let store = db.transaction(["tasks"], "readwrite").objectStore("tasks");
+  const store = db.transaction(["tasks"], "readwrite").objectStore("tasks");
 
   store.get(qd.task).onsuccess = e => {
     // check if there was an existing count otherwise start anew.
-    let count = (e.target.result && e.target.result.completed) || 0 || 0;
+    const count = (e.target.result && e.target.result.completed) || 0 || 0;
 
     // update the database count for the task
     store.put({ name: qd.task, completed: count + 1 });
@@ -235,23 +228,24 @@ function taskFinished() {
 }
 
 function setNixie(nixie, value) {
-  let numbers = nixie.getElementsByTagName("span");
+  const numbers = nixie.getElementsByTagName("span");
   for (let i = 0; i < numbers.length; i++) {
     numbers[i].classList.remove("active");
   }
-  if (0 <= value && value <= 9)
+  if (value >= 0 && value <= 9) {
     nixie
       .getElementsByClassName(value)
       .item(0)
       .classList.add("active");
+  }
 }
 
-Notification.requestPermission(function(status) {
+Notification.requestPermission(status => {
   console.log("Notification permission status:", status);
 });
 
-var _key = undefined;
-var count = 0;
+let _key;
+let count = 0;
 
 function resetDebounce() {
   _key = undefined;
@@ -268,7 +262,7 @@ function debounceKey(key) {
     _key = key;
   }
 
-  let result = ++count;
+  const result = ++count;
 
   if (debounce) clearTimeout(debounce);
   debounce = setTimeout(resetDebounce, 200);
@@ -276,42 +270,51 @@ function debounceKey(key) {
   return result;
 }
 
-var debounce;
+let debounce;
 
 function begin() {
   console.log(finished);
 
   if (!finished) return;
 
-  if (state == "break") return timer(workspan);
-  else if (state == "work")
-    return breather(
-      iteration > 0 && iteration % 4 == 0 ? 2 * breakspan : breakspan
-    );
+  if (state === "break") {
+    timer(workspan);
+    return;
+  }
+  if (state === "work") {
+    breather(iteration > 0 && iteration % 4 == 0 ? 2 * breakspan : breakspan);
+    return;
+  }
 }
 
 window.onclick = begin;
 document.onkeydown = e => {
   e = e || window.event;
-  let presses = debounceKey(e.key);
-  if (e.key == " ") return begin();
+  const presses = debounceKey(e.key);
 
-  if (e.key == "Escape") {
+  if (e.key === " ") {
+    begin();
+    return;
+  }
+
+  if (e.key === "Escape") {
     if (presses >= 3 && state == "work") {
       debounceKey();
-      return breather(breakspan);
+      breather(breakspan);
+      return;
     }
     if (presses >= 3 && state == "break") {
       debounceKey();
-      return timer(workspan);
+      timer(workspan);
+      return;
     }
   }
 };
 
 function notifiy(msg) {
-  if (Notification.permission == "granted") {
+  if (Notification.permission === "granted") {
     navigator.serviceWorker.getRegistration().then(registration => {
-      var notification = registration.showNotification("All done!", {
+      const notification = registration.showNotification("All done!", {
         tag: "task",
         renotify: true,
         requireInteraction: true,
