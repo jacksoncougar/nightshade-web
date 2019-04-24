@@ -2,7 +2,9 @@
 /* eslint-disable no-restricted-globals */
 
 import "../scss/app.scss";
-import { replaceAll } from "util";
+import { replaceAll } from "./util";
+import { Timer } from "./timer";
+import { Keys } from "./keys";
 /**
  * TODO: save the current timer time between refreshes
  * TODO: keep track of how many minutes each task's pomodoro was
@@ -32,10 +34,29 @@ const nixie1 = document.getElementById("nixie1");
 const nixie0 = document.getElementById("nixie0");
 
 const token = document.getElementById("token");
+const timer = new Timer();
+const keys = new Keys();
+
+timer.ontick = update;
+timer.onexpired = taskFinished;
 
 let state = "start";
 let iteration = 1;
 let db;
+
+// parse the query selector in the url
+const qd = {};
+if (location.search) {
+  location.search
+    .substr(1)
+    .split("&")
+    .forEach(item => {
+      const s = item.split("=");
+      const k = s[0];
+      const v = s[1] && replaceAll(decodeURIComponent(s[1]), /\+/, " "); //  null-coalescing / short-circuit
+      (qd[k] = qd[k] || []).push(v); // null-coalescing / short-circuit
+    });
+}
 
 const request = window.indexedDB.open("nightshade-db", 1);
 
@@ -63,73 +84,35 @@ request.onupgradeneeded = e => {
   objectStore.createIndex("completed", "completed", { unique: false });
 };
 
-// parse the query selector in the url
-const qd = {};
-if (location.search) {
-  location.search
-    .substr(1)
-    .split("&")
-    .forEach(item => {
-      const s = item.split("=");
-      const k = s[0];
-      const v = s[1] && replaceAll(decodeURIComponent(s[1]), /\+/, " "); //  null-coalescing / short-circuit
-      (qd[k] = qd[k] || []).push(v); // null-coalescing / short-circuit
-    });
-}
-
 // initialize program arguments.
 
 const workspan = qd.timer || 20;
 const breakspan = qd.break || 4;
 let finished = true;
 
-// move into 'work' state if a task has been defined.
-
-let worker;
-
-if (window.Worker) {
-  if (worker === undefined) {
-    worker = new Worker("worker.bundle.js");
-  }
-}
-
 window.onload = () => {
   if (qd.task !== undefined) {
     document.getElementById("task").style.visibility = "hidden";
     document.getElementById("timer").style.visibility = "visible";
 
-    if (worker) timer(workspan);
+    setTimer(workspan);
   } else {
     document.getElementById("task").style.visibility = "visible";
   }
 };
 
-worker.onmessage = e => {
-  let minutes = 99;
-  let seconds = 99;
+function update(minutes, seconds) {
+  document.title = `${minutes.toLocaleString(undefined, {
+    minimumIntegerDigits: 2
+  })}:${seconds.toLocaleString(undefined, {
+    minimumIntegerDigits: 2
+  })} ${qd.task}`;
 
-  if (e.data.minutes !== undefined && e.data.seconds !== undefined) {
-    [minutes, seconds] = e.data;
-  }
-
-  if (e.data.finished) {
-    // do whatever needs doing when the timer expires...
-    callback();
-  }
-
-  if (!finished) {
-    document.title = `${minutes.toLocaleString(undefined, {
-      minimumIntegerDigits: 2
-    })}:${seconds.toLocaleString(undefined, { minimumIntegerDigits: 2 })} ${
-      qd.task
-    }`;
-
-    setNixie(nixie3, Math.floor(minutes / 10));
-    setNixie(nixie2, Math.floor(minutes % 10));
-    setNixie(nixie1, Math.floor(seconds / 10));
-    setNixie(nixie0, Math.floor(seconds % 10));
-  }
-};
+  setNixie(nixie3, Math.floor(minutes / 10));
+  setNixie(nixie2, Math.floor(minutes % 10));
+  setNixie(nixie1, Math.floor(seconds / 10));
+  setNixie(nixie0, Math.floor(seconds % 10));
+}
 
 if ("serviceWorker" in navigator) {
   console.log("sw supported");
@@ -147,28 +130,19 @@ if ("serviceWorker" in navigator) {
   );
 }
 
-var callback = () => console.log("nothing here");
-
 /**
  * Starts a timer for the current task.
  * @param {number} amount - the amount of time in milliseconds
  */
-function timer(amount) {
+function setTimer(amount) {
   console.log("starting timer");
+  timer.start(amount);
   state = "work";
-  finished = false;
+
   document
     .getElementsByTagName("body")
     .item(0)
     .classList.remove("break");
-
-  if (window.Worker && worker != undefined) {
-    callback = () => {
-      taskFinished();
-      return document.getElementById("progress").appendChild(getWorkToken());
-    };
-    worker.postMessage(amount * 1000 * 60);
-  }
 }
 
 /**
@@ -178,19 +152,13 @@ function timer(amount) {
 function breather(amount) {
   state = "break";
   finished = false;
+
+  timer.start(amount);
+
   document
     .getElementsByTagName("body")
     .item(0)
     .classList.add("break");
-  if (window.Worker) {
-    if (worker != undefined) {
-      callback = () => {
-        taskFinished();
-        document.getElementById("progress").appendChild(getBreakToken());
-      };
-      worker.postMessage(amount * 1000 * 60);
-    }
-  }
 }
 
 function getBreakToken() {
@@ -210,17 +178,23 @@ function taskFinished() {
 
   const sound = new Audio("sounds/temple-bell.mp3");
   sound.play().catch(error => console.log(error));
+
   notifiy("Times up");
+
   iteration++;
 
   document.title = `finished ${qd.task}`;
+
+  document
+    .getElementById("progress")
+    .appendChild(state === "work" ? getWorkToken() : getBreakToken());
 
   // increment how many times this task was completed in the database.
   const store = db.transaction(["tasks"], "readwrite").objectStore("tasks");
 
   store.get(qd.task).onsuccess = e => {
     // check if there was an existing count otherwise start anew.
-    const count = (e.target.result && e.target.result.completed) || 0 || 0;
+    const count = (e.target.result && e.target.result.completed) || 0;
 
     // update the database count for the task
     store.put({ name: qd.task, completed: count + 1 });
@@ -244,41 +218,11 @@ Notification.requestPermission(status => {
   console.log("Notification permission status:", status);
 });
 
-let _key;
-let count = 0;
-
-function resetDebounce() {
-  _key = undefined;
-  count = 0;
-}
-
-function debounceKey(key) {
-  if (!key) {
-    count = 0;
-  }
-
-  if (key != _key) {
-    count = 0;
-    _key = key;
-  }
-
-  const result = ++count;
-
-  if (debounce) clearTimeout(debounce);
-  debounce = setTimeout(resetDebounce, 200);
-
-  return result;
-}
-
-let debounce;
-
 function begin() {
-  console.log(finished);
-
   if (!finished) return;
 
   if (state === "break") {
-    timer(workspan);
+    setTimer(workspan);
     return;
   }
   if (state === "work") {
@@ -287,34 +231,32 @@ function begin() {
   }
 }
 
-window.onclick = begin;
-document.onkeydown = e => {
-  e = e || window.event;
-  const presses = debounceKey(e.key);
-
-  if (e.key === " ") {
-    begin();
-    return;
-  }
-
+keys.ontriplepress = e => {
   if (e.key === "Escape") {
-    if (presses >= 3 && state == "work") {
-      debounceKey();
+    if (state === "work") {
       breather(breakspan);
       return;
     }
-    if (presses >= 3 && state == "break") {
-      debounceKey();
-      timer(workspan);
+    if (state === "break") {
+      setTimer(workspan);
       return;
     }
+  }
+};
+
+window.onclick = begin;
+
+document.onkeydown = e => {
+  if (e.key === " ") {
+    begin();
+    return;
   }
 };
 
 function notifiy(msg) {
   if (Notification.permission === "granted") {
     navigator.serviceWorker.getRegistration().then(registration => {
-      const notification = registration.showNotification("All done!", {
+      const notification = registration.showNotification(msg, {
         tag: "task",
         renotify: true,
         requireInteraction: true,
@@ -325,7 +267,6 @@ function notifiy(msg) {
       });
 
       notification.onclick = () => {
-        console.log("clicked");
         parent.focus();
         window.focus();
         this.close();

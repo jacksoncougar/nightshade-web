@@ -6,7 +6,7 @@ class Timer {
     this.running = false;
   }
 
-  ontick(callback) {
+  set ontick(callback) {
     this.emitter.on("tick", callback);
   }
 
@@ -14,12 +14,12 @@ class Timer {
     return this.running;
   }
 
-  onexpired(callback) {
+  set onexpired(callback) {
     this.emitter.on("expired", callback);
   }
 
   update() {
-    const moment = this.start - Date.now();
+    const moment = this.startTime - Date.now();
 
     let minutes = Math.floor(moment / 1000 / 60);
     let seconds = Math.floor((moment / 1000) % 60);
@@ -38,7 +38,7 @@ class Timer {
   start(time) {
     this.running = true;
     const ms = time * 1000 * 60;
-    this.start = Date.now() + ms;
+    this.startTime = Date.now() + ms;
     this.interval = setInterval(() => {
       this.update();
     }, 100);
@@ -56,8 +56,5 @@ class Timer {
 
   cancel() {}
 }
-
-const timer = new Timer();
-timer.start(0.1).then(() => console.log("got here"));
 
 export { Timer };
