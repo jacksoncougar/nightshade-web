@@ -9,5 +9,7 @@
         "titleBar.inactiveBackground": "#1a7e6599",
         "titleBar.activeForeground": "#e7e7e7",
         "titleBar.inactiveForeground": "#e7e7e799"
-    }
+    },
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true
 }
